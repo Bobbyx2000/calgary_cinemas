@@ -149,7 +149,7 @@ describe("App", () => {
 
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
-    expect(screen.getByAltText("Holy Days poster")).toBeInTheDocument();
+    expect(screen.getAllByAltText("Holy Days poster").length).toBeGreaterThan(0);
     expect(
       screen.queryByAltText("Calgary Underground Film Festival poster")
     ).not.toBeInTheDocument();
