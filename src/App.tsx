@@ -146,6 +146,7 @@ function App() {
                 <span>Date</span>
                 <input
                   type="date"
+                  aria-label="Date"
                   value={selectedDate}
                   onChange={(event) => setSelectedDate(event.target.value)}
                   disabled={availableDates.length === 0}
