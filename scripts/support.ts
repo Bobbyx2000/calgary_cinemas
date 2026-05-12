@@ -151,7 +151,7 @@ export function parsePlazaHTML(html: string, referenceDate = new Date()): Listin
   });
 
   const listings = Array.from(listingsByTitle.values())
-    .map((partial) => {
+    .map<Listing | null>((partial) => {
       const metadata = metadataByTitle.get(partial.title.toLowerCase());
       const mergedShowtimes = uniqueSortedShowtimes(
         partial.showtimes.length > 0 ? partial.showtimes : metadata?.showtimes ?? []
