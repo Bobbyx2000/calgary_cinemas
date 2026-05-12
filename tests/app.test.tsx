@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "../src/App";
 import type { ListingsPayload } from "../src/lib/types";
@@ -61,6 +61,7 @@ const payload: ListingsPayload = {
 describe("App", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    cleanup();
   });
 
   it("selects the earliest available date by default", async () => {
@@ -71,7 +72,7 @@ describe("App", () => {
 
     const dateSelect = screen.getByLabelText("Date") as HTMLSelectElement;
     expect(dateSelect.value).toBe("2026-04-16");
-    expect(screen.getByText("Holy Days")).toBeInTheDocument();
+    expect(screen.getAllByText("Holy Days")).toHaveLength(1);
   });
 
   it("renders provider warnings and listing links", async () => {
@@ -95,8 +96,8 @@ describe("App", () => {
       target: { value: "globe" }
     });
 
-    expect(screen.getByText("Calgary Underground Film Festival")).toBeInTheDocument();
-    expect(screen.queryByText("Holy Days")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Calgary Underground Film Festival")).toHaveLength(1);
+    expect(screen.queryAllByText("Holy Days")).toHaveLength(0);
   });
 
   it("renders a no-data state when the payload is empty", async () => {
