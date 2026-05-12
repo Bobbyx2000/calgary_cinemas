@@ -3,6 +3,7 @@ import {
   buildRows,
   formatTimeLabel,
   formatTimestamp,
+  getAvailableDates,
   theatreLabel
 } from "./lib/listings";
 import type { ListingRow, ListingsPayload, Theatre } from "./lib/types";
@@ -16,6 +17,7 @@ type LoadState =
 function App() {
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
   const [selectedTheatre, setSelectedTheatre] = useState<"all" | Theatre>("all");
+  const [selectedDate, setSelectedDate] = useState<string>("");
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +53,24 @@ function App() {
   }, []);
 
   const payload = loadState.status === "loaded" ? loadState.payload : null;
+  const availableDates = useMemo(
+    () => (payload ? getAvailableDates(payload.listings, payload.timeZone) : []),
+    [payload]
+  );
+
+  useEffect(() => {
+    if (!payload) {
+      return;
+    }
+
+    setSelectedDate((currentDate) => {
+      if (currentDate && availableDates.includes(currentDate)) {
+        return currentDate;
+      }
+
+      return availableDates[0] ?? "";
+    });
+  }, [availableDates, payload]);
 
   const rows = useMemo(() => {
     if (!payload) {
@@ -59,10 +79,14 @@ function App() {
 
     const allRows = buildRows(payload.listings, payload.timeZone);
 
-    return allRows.filter((row) =>
-      selectedTheatre === "all" ? true : row.theatre === selectedTheatre
-    );
-  }, [payload, selectedTheatre]);
+    return allRows.filter((row) => {
+      const theatreMatches =
+        selectedTheatre === "all" ? true : row.theatre === selectedTheatre;
+      const dateMatches = selectedDate ? row.dateKey === selectedDate : true;
+
+      return theatreMatches && dateMatches;
+    });
+  }, [payload, selectedDate, selectedTheatre]);
 
   return (
     <main className="page-shell">
@@ -116,6 +140,16 @@ function App() {
                   <option value="globe">Globe Cinema</option>
                 </select>
               </label>
+
+              <label>
+                <input
+                  type="date"
+                  aria-label="Date"
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  disabled={availableDates.length === 0}
+                />
+              </label>
             </div>
 
             {payload.listings.length === 0 ? (
@@ -125,7 +159,7 @@ function App() {
               </p>
             ) : rows.length === 0 ? (
               <p className="state-message">
-                Nothing matches the current filters. Try another theatre or switch
+                Nothing matches the current filters. Try another date or switch
                 back to all theatres.
               </p>
             ) : (
