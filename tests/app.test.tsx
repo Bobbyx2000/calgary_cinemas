@@ -72,7 +72,7 @@ describe("App", () => {
 
     const dateSelect = screen.getByLabelText("Date") as HTMLSelectElement;
     expect(dateSelect.value).toBe("2026-04-16");
-    expect(screen.getAllByText("Holy Days")).toHaveLength(1);
+    expect(screen.getAllByText("Holy Days")).toHaveLength(2);
   });
 
   it("renders provider warnings and listing links", async () => {
