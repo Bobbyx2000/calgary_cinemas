@@ -73,7 +73,7 @@ describe("App", () => {
     expect(screen.queryByLabelText("Date")).not.toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(2);
     expect(screen.getByText("Wed, Apr 16")).toBeInTheDocument();
-    expect(screen.getByText("Mon, Apr 20")).toBeInTheDocument();
+    expect(screen.getByText("Tue, Apr 21")).toBeInTheDocument();
   });
 
   it("renders updated hero copy, provider warnings, and listing links", async () => {
