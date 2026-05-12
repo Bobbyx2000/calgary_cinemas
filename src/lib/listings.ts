@@ -30,6 +30,29 @@ export function formatDateLabel(isoString: string, timeZone: string): string {
   }).format(new Date(isoString));
 }
 
+export function formatSelectedDateLabel(dateKey: string, timeZone: string): string {
+  if (!dateKey) {
+    return "";
+  }
+
+  const [year, month, day] = dateKey.split("-").map((value) => Number(value));
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return dateKey;
+  }
+
+  const weekday = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    weekday: "short"
+  }).format(new Date(Date.UTC(year, month - 1, day, 12)));
+
+  return `${weekday}, ${dateKey}`;
+}
+
 export function formatTimeLabel(isoString: string, timeZone: string): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -90,6 +113,7 @@ export function buildRows(listings: Listing[], timeZone: string): ListingRow[] {
         theatre: listing.theatre,
         rating: listing.rating,
         summary: truncate(listing.summary),
+        posterURL: listing.posterURL,
         sourceURL: listing.sourceURL,
         purchaseURL:
           sortedShowtimes.find((showtime) => showtime.ticketURL)?.ticketURL ??
