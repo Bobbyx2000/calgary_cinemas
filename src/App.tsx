@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   buildRows,
+  formatSelectedDateLabel,
   formatTimeLabel,
   formatTimestamp,
   getAvailableDates,
@@ -64,7 +65,7 @@ function App() {
     }
 
     setSelectedDate((currentDate) => {
-      if (currentDate && availableDates.includes(currentDate)) {
+      if (currentDate) {
         return currentDate;
       }
 
@@ -91,12 +92,8 @@ function App() {
   return (
     <main className="page-shell">
       <section className="hero">
-        <p className="eyebrow">Static site. Fresh data. Zero server bill.</p>
-        <h1>Calgary Indie Showtimes</h1>
-        <p className="lede">
-          Live listings from The Plaza Theatre and Globe Cinema, published as a
-          lightweight public web app.
-        </p>
+        <h1>Calgary Showtimes</h1>
+        <p className="lede">Live listings from The Plaza Theatre and Globe Cinema</p>
 
         {payload ? (
           <div className="meta-strip">
@@ -147,21 +144,17 @@ function App() {
 
               <label>
                 <span>Date</span>
-                <select
+                <input
+                  type="date"
                   value={selectedDate}
                   onChange={(event) => setSelectedDate(event.target.value)}
                   disabled={availableDates.length === 0}
-                >
-                  {availableDates.length === 0 ? (
-                    <option value="">No dates available</option>
-                  ) : (
-                    availableDates.map((dateKey) => (
-                      <option key={dateKey} value={dateKey}>
-                        {dateKey}
-                      </option>
-                    ))
-                  )}
-                </select>
+                />
+                <span className="filter-helper">
+                  {selectedDate
+                    ? formatSelectedDateLabel(selectedDate, payload.timeZone)
+                    : "No dates available"}
+                </span>
               </label>
             </div>
 
@@ -182,6 +175,29 @@ function App() {
         ) : null}
       </section>
     </main>
+  );
+}
+
+function ListingTitleCell({ row }: { row: ListingRow }) {
+  const [hidePoster, setHidePoster] = useState(false);
+
+  return (
+    <div className="title-cell">
+      {row.posterURL && !hidePoster ? (
+        <img
+          src={row.posterURL}
+          alt={`${row.title} poster`}
+          className="poster-thumb"
+          loading="lazy"
+          onError={() => setHidePoster(true)}
+        />
+      ) : null}
+
+      <div className="title-copy">
+        <strong>{row.title}</strong>
+        {row.summary ? <p>{row.summary}</p> : null}
+      </div>
+    </div>
   );
 }
 
@@ -210,10 +226,7 @@ function ResultsTable({
           {rows.map((row) => (
             <tr key={row.id}>
               <td>
-                <div className="title-cell">
-                  <strong>{row.title}</strong>
-                  {row.summary ? <p>{row.summary}</p> : null}
-                </div>
+                <ListingTitleCell row={row} />
               </td>
               <td>{theatreLabel(row.theatre)}</td>
               <td>{row.kind === "event" ? "Event" : "Movie"}</td>
