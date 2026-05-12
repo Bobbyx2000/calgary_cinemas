@@ -64,16 +64,18 @@ describe("App", () => {
     cleanup();
   });
 
-  it("renders all dates by default without a date filter", async () => {
+  it("selects the earliest available date without showing helper text", async () => {
     mockFetch(payload);
     render(<App />);
 
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
-    expect(screen.queryByLabelText("Date")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Holy Days")).toHaveLength(2);
-    expect(screen.getAllByText("Thu, Apr 16")).toHaveLength(2);
-    expect(screen.getByText("Tue, Apr 21")).toBeInTheDocument();
+    const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
+    await waitFor(() => {
+      expect(dateInput.value).toBe("2026-04-16");
+    });
+    expect(screen.queryByText("Thu, 2026-04-16")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Holy Days")).toHaveLength(1);
   });
 
   it("renders updated hero copy, provider warnings, and listing links", async () => {
@@ -124,17 +126,16 @@ describe("App", () => {
   });
 
   it("renders a no-match state when filters exclude all rows", async () => {
-    mockFetch({
-      ...payload,
-      listingCount: 1,
-      listings: [payload.listings[0]]
-    });
+    mockFetch(payload);
     render(<App />);
 
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     fireEvent.change(screen.getByLabelText("Theatre"), {
       target: { value: "globe" }
+    });
+    fireEvent.change(screen.getByLabelText("Date"), {
+      target: { value: "2026-04-21" }
     });
 
     await waitFor(() => {
