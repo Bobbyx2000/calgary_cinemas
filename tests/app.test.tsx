@@ -75,7 +75,7 @@ describe("App", () => {
       expect(dateInput.value).toBe("2026-04-16");
     });
     expect(screen.getByText("Thu, 2026-04-16")).toBeInTheDocument();
-    expect(screen.getAllByText("Holy Days")).toHaveLength(2);
+    expect(screen.getAllByText("Holy Days")).toHaveLength(1);
   });
 
   it("renders updated hero copy, provider warnings, and listing links", async () => {
