@@ -1,0 +1,54 @@
+{
+  "generatedAt": "2026-05-11T12:00:00.000Z",
+  "timeZone": "America/Edmonton",
+  "listingCount": 2,
+  "warnings": [],
+  "listings": [
+    {
+      "id": "plaza-holy-days",
+      "title": "Holy Days",
+      "kind": "movie",
+      "theatre": "plaza",
+      "rating": "PG",
+      "summary": "A road trip across New Zealand.",
+      "posterURL": "https://ticketing.uswest.veezi.com/Media/Poster?code=123",
+      "purchaseURL": "https://ticketing.uswest.veezi.com/purchase/1?siteToken=test",
+      "sourceURL": "https://ticketing.uswest.veezi.com/sessions/?siteToken=9xj6mkn8fmb6cv01mats3y1zgr",
+      "showtimes": [
+        {
+          "id": "1776379200::https://ticketing.uswest.veezi.com/purchase/1?siteToken=test",
+          "startsAt": "2026-04-16T20:00:00.000Z",
+          "ticketURL": "https://ticketing.uswest.veezi.com/purchase/1?siteToken=test"
+        },
+        {
+          "id": "1776805200::https://ticketing.uswest.veezi.com/purchase/2?siteToken=test",
+          "startsAt": "2026-04-21T21:00:00.000Z",
+          "ticketURL": "https://ticketing.uswest.veezi.com/purchase/2?siteToken=test"
+        }
+      ]
+    },
+    {
+      "id": "globe-calgary-underground-film-festival",
+      "title": "Calgary Underground Film Festival",
+      "kind": "event",
+      "theatre": "globe",
+      "rating": null,
+      "summary": "Festival week with screenings across multiple days.",
+      "posterURL": "https://globecinema.ca/assets/components/moviemanager/Images/Posters/1444.jpg",
+      "purchaseURL": "https://festival.example/schedule",
+      "sourceURL": "https://globecinema.ca/movie.html#1444",
+      "showtimes": [
+        {
+          "id": "1776387600::https://festival.example/schedule",
+          "startsAt": "2026-04-17T01:00:00.000Z",
+          "ticketURL": "https://festival.example/schedule"
+        },
+        {
+          "id": "1776472200::https://festival.example/schedule",
+          "startsAt": "2026-04-18T00:30:00.000Z",
+          "ticketURL": "https://festival.example/schedule"
+        }
+      ]
+    }
+  ]
+}
