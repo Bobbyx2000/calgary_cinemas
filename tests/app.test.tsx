@@ -71,7 +71,9 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
-    expect(dateInput.value).toBe("2026-04-16");
+    await waitFor(() => {
+      expect(dateInput.value).toBe("2026-04-16");
+    });
     expect(screen.getByText("Thu, 2026-04-16")).toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(2);
   });
