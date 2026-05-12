@@ -143,7 +143,6 @@ function App() {
               </label>
 
               <label>
-                <span>Date</span>
                 <input
                   type="date"
                   aria-label="Date"
