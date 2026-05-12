@@ -41,6 +41,7 @@ export type ListingRow = {
   theatre: Theatre;
   rating: string | null;
   summary: string | null;
+  posterURL: string | null;
   sourceURL: string;
   purchaseURL: string | null;
   dateKey: string;
