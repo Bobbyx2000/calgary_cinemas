@@ -21,7 +21,7 @@ const payload: ListingsPayload = {
       theatre: "plaza",
       rating: "PG",
       summary: "A road trip across New Zealand.",
-      posterURL: null,
+      posterURL: "https://example.com/holy-days.jpg",
       purchaseURL: "https://ticketing.uswest.veezi.com/purchase/1?siteToken=test",
       sourceURL: "https://ticketing.uswest.veezi.com/sessions/?siteToken=abc",
       showtimes: [
@@ -68,16 +68,26 @@ describe("App", () => {
     mockFetch(payload);
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Calgary Indie Showtimes" });
+    await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
-    const dateSelect = screen.getByLabelText("Date") as HTMLSelectElement;
-    expect(dateSelect.value).toBe("2026-04-16");
+    const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
+    expect(dateInput.value).toBe("2026-04-16");
+    expect(screen.getByText("Thu, 2026-04-16")).toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(2);
   });
 
-  it("renders provider warnings and listing links", async () => {
+  it("renders updated hero copy, provider warnings, and listing links", async () => {
     mockFetch(payload);
     render(<App />);
+
+    await screen.findByRole("heading", { name: "Calgary Showtimes" });
+
+    expect(
+      screen.getByText("Live listings from The Plaza Theatre and Globe Cinema")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Static site. Fresh data. Zero server bill.")
+    ).not.toBeInTheDocument();
 
     const banner = await screen.findByRole("status");
 
@@ -90,7 +100,7 @@ describe("App", () => {
     mockFetch(payload);
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Calgary Indie Showtimes" });
+    await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     fireEvent.change(screen.getByLabelText("Theatre"), {
       target: { value: "globe" }
@@ -117,7 +127,7 @@ describe("App", () => {
     mockFetch(payload);
     render(<App />);
 
-    await screen.findByRole("heading", { name: "Calgary Indie Showtimes" });
+    await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     fireEvent.change(screen.getByLabelText("Theatre"), {
       target: { value: "globe" }
@@ -131,6 +141,18 @@ describe("App", () => {
         screen.getByText(/Nothing matches the current filters/i)
       ).toBeInTheDocument();
     });
+  });
+
+  it("renders poster thumbnails when available and omits them otherwise", async () => {
+    mockFetch(payload);
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Calgary Showtimes" });
+
+    expect(screen.getByAltText("Holy Days poster")).toBeInTheDocument();
+    expect(
+      screen.queryByAltText("Calgary Underground Film Festival poster")
+    ).not.toBeInTheDocument();
   });
 });
 
