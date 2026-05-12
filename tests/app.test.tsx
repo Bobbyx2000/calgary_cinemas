@@ -72,7 +72,7 @@ describe("App", () => {
 
     expect(screen.queryByLabelText("Date")).not.toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(2);
-    expect(screen.getByText("Wed, Apr 16")).toBeInTheDocument();
+    expect(screen.getByText("Thu, Apr 16")).toBeInTheDocument();
     expect(screen.getByText("Tue, Apr 21")).toBeInTheDocument();
   });
 
