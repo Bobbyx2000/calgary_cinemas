@@ -82,13 +82,17 @@
 .filters label {
   display: grid;
   gap: 8px;
+  min-width: 0;
   color: #e8ecff;
   font-size: 0.95rem;
 }
 
 .filters input,
 .filters select {
+  display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 12px 14px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 14px;
@@ -203,7 +207,7 @@ tbody td {
 
   .title-cell {
     gap: 12px;
-    min-width: 220px;
+    min-width: 0;
   }
 
   .poster-thumb {
@@ -212,8 +216,75 @@ tbody td {
     border-radius: 10px;
   }
 
-  thead th,
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .table-wrap {
+    overflow-x: visible;
+  }
+
+  thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  table,
+  tbody,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  tbody {
+    display: grid;
+    gap: 14px;
+  }
+
+  tbody tr {
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
   tbody td {
-    padding-inline: 10px;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  tbody td + td {
+    margin-top: 12px;
+  }
+
+  tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 6px;
+    color: rgba(235, 239, 255, 0.84);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .showtime-list,
+  .link-list {
+    gap: 6px;
+  }
+
+  .title-copy p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
   }
 }
