@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   buildRows,
+  formatSelectedDateLabel,
   formatTimeLabel,
   formatTimestamp,
   getAvailableDates,
@@ -64,7 +65,7 @@ function App() {
     }
 
     setSelectedDate((currentDate) => {
-      if (currentDate && availableDates.includes(currentDate)) {
+      if (currentDate) {
         return currentDate;
       }
 
@@ -142,6 +143,7 @@ function App() {
               </label>
 
               <label>
+                <span>Date</span>
                 <input
                   type="date"
                   aria-label="Date"
@@ -149,6 +151,11 @@ function App() {
                   onChange={(event) => setSelectedDate(event.target.value)}
                   disabled={availableDates.length === 0}
                 />
+                <span className="filter-helper">
+                  {selectedDate
+                    ? formatSelectedDateLabel(selectedDate, payload.timeZone)
+                    : "No dates available"}
+                </span>
               </label>
             </div>
 
@@ -219,14 +226,14 @@ function ResultsTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.id}>
-              <td>
+              <td data-label="Title">
                 <ListingTitleCell row={row} />
               </td>
-              <td>{theatreLabel(row.theatre)}</td>
-              <td>{row.kind === "event" ? "Event" : "Movie"}</td>
-              <td>{row.rating ?? "Unrated"}</td>
-              <td>{row.dateLabel}</td>
-              <td>
+              <td data-label="Theatre">{theatreLabel(row.theatre)}</td>
+              <td data-label="Type">{row.kind === "event" ? "Event" : "Movie"}</td>
+              <td data-label="Rating">{row.rating ?? "Unrated"}</td>
+              <td data-label="Date">{row.dateLabel}</td>
+              <td data-label="Showtimes">
                 <div className="showtime-list">
                   {row.showtimes.map((showtime) => (
                     <span key={showtime.id}>
@@ -235,7 +242,7 @@ function ResultsTable({
                   ))}
                 </div>
               </td>
-              <td>
+              <td data-label="Links">
                 <div className="link-list">
                   {row.purchaseURL ? (
                     <a href={row.purchaseURL} target="_blank" rel="noreferrer">
