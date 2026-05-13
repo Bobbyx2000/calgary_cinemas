@@ -64,7 +64,7 @@ describe("App", () => {
     cleanup();
   });
 
-  it("selects the earliest available date without showing helper text", async () => {
+  it("selects the earliest available date by default", async () => {
     mockFetch(payload);
     render(<App />);
 
@@ -74,7 +74,7 @@ describe("App", () => {
     await waitFor(() => {
       expect(dateInput.value).toBe("2026-04-16");
     });
-    expect(screen.queryByText("Thu, 2026-04-16")).not.toBeInTheDocument();
+    expect(screen.getByText("Thu, 2026-04-16")).toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(1);
   });
 
@@ -155,6 +155,18 @@ describe("App", () => {
     expect(
       screen.queryByAltText("Calgary Underground Film Festival poster")
     ).not.toBeInTheDocument();
+  });
+
+  it("renders mobile-friendly table cell labels and keeps the date input accessible", async () => {
+    mockFetch(payload);
+    const { container } = render(<App />);
+
+    await screen.findByRole("heading", { name: "Calgary Showtimes" });
+
+    expect(screen.getByLabelText("Date")).toBeInTheDocument();
+    expect(container.querySelector('td[data-label="Title"]')).not.toBeNull();
+    expect(container.querySelector('td[data-label="Showtimes"]')).not.toBeNull();
+    expect(container.querySelector('td[data-label="Links"]')).not.toBeNull();
   });
 });
 
