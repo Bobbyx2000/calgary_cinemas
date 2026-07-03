@@ -1,4 +1,4 @@
-export type Theatre = "plaza" | "globe";
+export type Theatre = "plaza" | "globe" | "grand";
 export type ListingKind = "movie" | "event";
 
 export type ProviderWarning = {

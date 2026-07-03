@@ -2,6 +2,7 @@ import type { Listing, ListingRow, Showtime, Theatre } from "./types";
 
 const THEATRE_LABELS: Record<Theatre, string> = {
   globe: "Globe Cinema",
+  grand: "The GRAND",
   plaza: "The Plaza Theatre"
 };
 

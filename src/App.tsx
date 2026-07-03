@@ -93,7 +93,9 @@ function App() {
     <main className="page-shell">
       <section className="hero">
         <h1>Calgary Showtimes</h1>
-        <p className="lede">Live listings from The Plaza Theatre and Globe Cinema</p>
+        <p className="lede">
+          Live listings from The Plaza Theatre, Globe Cinema, and The GRAND
+        </p>
 
         {payload ? (
           <div className="meta-strip">
@@ -139,14 +141,15 @@ function App() {
                   <option value="all">All theatres</option>
                   <option value="plaza">The Plaza Theatre</option>
                   <option value="globe">Globe Cinema</option>
+                  <option value="grand">The GRAND</option>
                 </select>
               </label>
 
               <label>
                 <span>Date</span>
                 <input
-                  type="date"
                   aria-label="Date"
+                  type="date"
                   value={selectedDate}
                   onChange={(event) => setSelectedDate(event.target.value)}
                   disabled={availableDates.length === 0}

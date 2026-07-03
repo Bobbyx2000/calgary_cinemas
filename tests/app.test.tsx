@@ -71,9 +71,11 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
+
     await waitFor(() => {
       expect(dateInput.value).toBe("2026-04-16");
     });
+
     expect(screen.getByText("Thu, 2026-04-16")).toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(1);
   });
@@ -85,7 +87,7 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     expect(
-      screen.getByText("Live listings from The Plaza Theatre and Globe Cinema")
+      screen.getByText("Live listings from The Plaza Theatre, Globe Cinema, and The GRAND")
     ).toBeInTheDocument();
     expect(
       screen.queryByText("Static site. Fresh data. Zero server bill.")
@@ -103,6 +105,8 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
+
+    expect(screen.getByRole("option", { name: "The GRAND" })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Theatre"), {
       target: { value: "globe" }

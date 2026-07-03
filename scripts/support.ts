@@ -13,6 +13,7 @@ export const SHOWTIME_TIME_ZONE = "America/Edmonton" as const;
 export const PLAZA_SOURCE_URL =
   "https://ticketing.uswest.veezi.com/sessions/?siteToken=9xj6mkn8fmb6cv01mats3y1zgr";
 export const GLOBE_SOURCE_URL = "https://globecinema.ca/movie.html";
+export const GRAND_SOURCE_URL = "https://www.thegrandyyc.ca/whats-on";
 
 type FetchLike = typeof fetch;
 
@@ -28,6 +29,14 @@ type FilmMetadata = {
   summary: string | null;
   posterURL: string | null;
   showtimes: Showtime[];
+};
+
+type GrandCandidate = {
+  title: string;
+  dateText: string;
+  detailURL: string;
+  posterURL: string | null;
+  purchaseURL: string | null;
 };
 
 type ProviderDefinition = {
@@ -48,6 +57,16 @@ const providers: ProviderDefinition[] = [
     sourceURL: GLOBE_SOURCE_URL,
     fetchListings: async (fetchImpl, referenceDate) =>
       parseGlobeHTML(await fetchHTML(GLOBE_SOURCE_URL, fetchImpl), referenceDate)
+  },
+  {
+    sourceName: "The GRAND",
+    sourceURL: GRAND_SOURCE_URL,
+    fetchListings: async (fetchImpl, referenceDate) =>
+      parseGrandHTML(
+        await fetchHTML(GRAND_SOURCE_URL, fetchImpl),
+        fetchImpl,
+        referenceDate
+      )
   }
 ];
 
@@ -239,6 +258,65 @@ export function parseGlobeHTML(html: string, referenceDate = new Date()): Listin
   return sortListings(listings);
 }
 
+export async function parseGrandHTML(
+  html: string,
+  fetchImpl: FetchLike,
+  referenceDate = new Date()
+): Promise<Listing[]> {
+  const $ = cheerio.load(html, { baseURI: GRAND_SOURCE_URL });
+  const candidates = parseGrandCandidates($);
+  const listings = await Promise.all(
+    candidates.map(async (candidate): Promise<Listing | null> => {
+      const detailHTML = await fetchHTML(candidate.detailURL, fetchImpl);
+      const detail = parseGrandDetail(detailHTML, candidate.dateText, referenceDate);
+
+      if (!detail) {
+        return null;
+      }
+
+      const showtime = buildShowtime(detail.startsAt, candidate.purchaseURL);
+
+      return {
+        id: normalizedListingID("grand", candidate.title),
+        title: candidate.title,
+        kind: "movie" as const,
+        theatre: "grand",
+        rating: detail.rating,
+        summary: detail.summary,
+        posterURL: candidate.posterURL,
+        purchaseURL: candidate.purchaseURL,
+        sourceURL: candidate.detailURL,
+        showtimes: [showtime]
+      } satisfies Listing;
+    })
+  );
+
+  return sortListings(listings.filter((listing): listing is Listing => listing !== null));
+}
+
+export function parseGrandDate(
+  dateText: string,
+  timeText: string,
+  referenceDate = new Date()
+): Date | null {
+  const reference = DateTime.fromJSDate(referenceDate, { zone: SHOWTIME_TIME_ZONE });
+  const candidate = DateTime.fromFormat(
+    `${normalizeWhitespace(dateText)} ${normalizeGrandTime(timeText)}`,
+    "MMM dd, yyyy h:mm a",
+    {
+      zone: SHOWTIME_TIME_ZONE,
+      locale: "en-US"
+    }
+  );
+
+  if (!candidate.isValid) {
+    return null;
+  }
+
+  const diffDays = Math.abs(candidate.diff(reference, "days").days);
+  return diffDays <= 365 ? candidate.toJSDate() : null;
+}
+
 export function parsePlazaDate(
   dateText: string,
   timeText: string,
@@ -317,6 +395,122 @@ function parsePlazaFilmMetadata(
   });
 
   return metadataByTitle;
+}
+
+function parseGrandCandidates($: cheerio.CheerioAPI): GrandCandidate[] {
+  return $(".event-listing-col")
+    .toArray()
+    .flatMap((element) => {
+      const card = $(element);
+      const title = normalizeWhitespace(card.find(".event-title").first().text());
+      const dateText = normalizeWhitespace(card.find(".event-dates").first().text());
+      const detailHref =
+        card.find("a.title-link[href]").first().attr("href") ??
+        card.find("a.img-hvr[href]").first().attr("href") ??
+        "";
+      const detailURL = resolveURL(detailHref, GRAND_SOURCE_URL);
+
+      if (!title || !dateText || !detailURL || !isInternalURL(detailURL, GRAND_SOURCE_URL)) {
+        return [];
+      }
+
+      const rawPosterURL = normalizeWhitespace(
+        card.find("img.card-img").first().attr("src") ?? ""
+      );
+      const posterURL = resolveURL(rawPosterURL, GRAND_SOURCE_URL);
+      const ticketLink = card.find("a.event_listing_ticket_link").first();
+
+      return [
+        {
+          title,
+          dateText,
+          detailURL,
+          posterURL,
+          purchaseURL: extractGrandPurchaseURL(ticketLink, $)
+        }
+      ];
+    });
+}
+
+function parseGrandDetail(
+  html: string,
+  dateText: string,
+  referenceDate: Date
+): { startsAt: Date; rating: string | null; summary: string | null } | null {
+  const $ = cheerio.load(html, { baseURI: GRAND_SOURCE_URL });
+  const detailText = normalizeWhitespace($("body").text() || $.root().text());
+
+  if (!isGrandMovieDetail(detailText)) {
+    return null;
+  }
+
+  const movieStartText = extractGrandMovieStart(detailText);
+
+  if (!movieStartText) {
+    return null;
+  }
+
+  const startsAt = parseGrandDate(dateText, movieStartText, referenceDate);
+
+  if (!startsAt) {
+    return null;
+  }
+
+  return {
+    startsAt,
+    rating: extractGrandRating(detailText),
+    summary: extractGrandSummary(detailText)
+  };
+}
+
+function isGrandMovieDetail(detailText: string): boolean {
+  const hasMovieStart = /\bMovie starts:/i.test(detailText);
+  const hasFeatureScreening = /\bFeature Film Screening:/i.test(detailText);
+  const hasFilmMetadata = /\b(Directed by|Rating:|Trailer:)/i.test(detailText);
+
+  return hasMovieStart || (hasFeatureScreening && hasFilmMetadata);
+}
+
+function extractGrandMovieStart(detailText: string): string | null {
+  const match = detailText.match(/\bMovie starts:\s*([0-9]{1,2}:[0-9]{2}\s*[AP]M)/i);
+  return match ? normalizeGrandTime(match[1]) : null;
+}
+
+function extractGrandPurchaseURL(
+  ticketLink: cheerio.Cheerio<any>,
+  $: cheerio.CheerioAPI
+): string | null {
+  const href = ticketLink.attr("href") ?? "";
+  const resolvedHref = resolveURL(href, GRAND_SOURCE_URL);
+
+  if (resolvedHref && href !== "#" && !isInternalURL(resolvedHref, GRAND_SOURCE_URL)) {
+    return resolvedHref;
+  }
+
+  const onclick = ticketLink.attr("onclick") ?? "";
+  const showpassSlug = onclick.match(/eventPurchaseWidget\('([^']+)/)?.[1]?.split(",")[0];
+
+  if (!showpassSlug) {
+    return null;
+  }
+
+  return `https://www.showpass.com/${showpassSlug.replace(/^\/+|\/+$/g, "")}/`;
+}
+
+function extractGrandRating(detailText: string): string | null {
+  const match = detailText.match(/\bRating:\s*([A-Z0-9+-]+)/i);
+  return match ? normalizeWhitespace(match[1].toUpperCase()) : null;
+}
+
+function extractGrandSummary(detailText: string): string | null {
+  const beforeEventDetails = detailText.split(/\bEvent details\b/i)[0] ?? detailText;
+  const afterRating = beforeEventDetails.split(/\bRating:\s*[A-Z0-9+-]+/i)[1];
+
+  return nilIfBlank(afterRating ?? beforeEventDetails);
+}
+
+function normalizeGrandTime(timeText: string): string {
+  return normalizeWhitespace(timeText).replace(/\s*([AP])M$/i, " $1M").toUpperCase();
 }
 
 function parseInferredDate(
@@ -512,6 +706,10 @@ function resolveURL(value: string, baseURL: string): string | null {
   }
 
   return new URL(value, baseURL).toString();
+}
+
+function isInternalURL(value: string, baseURL: string): boolean {
+  return new URL(value).origin === new URL(baseURL).origin;
 }
 
 function nilIfBlank(value: string): string | null {
