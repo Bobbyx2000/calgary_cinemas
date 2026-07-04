@@ -1,16 +1,14 @@
 :root {
-  color-scheme: dark;
-  font-family:
-    "IBM Plex Sans",
-    "Avenir Next",
-    system-ui,
-    sans-serif;
+  color-scheme: light;
+  font-family: "Inter", "Avenir Next", system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #f4de83;
+  color: #000000;
 }
 
 * {
@@ -19,6 +17,9 @@
 
 body {
   margin: 0;
+  min-width: 320px;
+  background: #f4de83;
+  color: #000000;
 }
 
 button,
