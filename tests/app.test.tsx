@@ -6,7 +6,7 @@ import type { ListingsPayload } from "../src/lib/types";
 const payload: ListingsPayload = {
   generatedAt: "2026-05-11T12:00:00.000Z",
   timeZone: "America/Edmonton",
-  listingCount: 2,
+  listingCount: 3,
   warnings: [
     {
       sourceName: "Globe Cinema",
@@ -54,6 +54,25 @@ const payload: ListingsPayload = {
           ticketURL: "https://festival.example/schedule"
         }
       ]
+    },
+    {
+      id: "contemporary-a-separation",
+      title: "Perspective Film Series: A Separation (2011)",
+      kind: "movie",
+      theatre: "contemporary",
+      rating: null,
+      summary: "An intense legal drama about class, faith, and family in modern Iran.",
+      posterURL: "https://example.com/a-separation.jpg",
+      purchaseURL: "https://www.showpass.com/perspective-film-series-a-separation-2011/",
+      sourceURL:
+        "https://www.contemporarycalgary.com/whats-on/perspective-film-series-a-separation-2011",
+      showtimes: [
+        {
+          id: "4",
+          startsAt: "2026-07-19T23:30:00.000Z",
+          ticketURL: "https://www.showpass.com/perspective-film-series-a-separation-2011/"
+        }
+      ]
     }
   ]
 };
@@ -87,7 +106,9 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     expect(
-      screen.getByText("Live listings from The Plaza Theatre, Globe Cinema, and The GRAND")
+      screen.getByText(
+        "Live listings from The Plaza Theatre, Globe Cinema, The GRAND, and Contemporary Calgary"
+      )
     ).toBeInTheDocument();
     expect(
       screen.queryByText("Static site. Fresh data. Zero server bill.")
@@ -107,6 +128,9 @@ describe("App", () => {
     await screen.findByRole("heading", { name: "Calgary Showtimes" });
 
     expect(screen.getByRole("option", { name: "The GRAND" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Contemporary Calgary" })
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Theatre"), {
       target: { value: "globe" }
@@ -171,6 +195,27 @@ describe("App", () => {
     expect(container.querySelector('td[data-label="Title"]')).not.toBeNull();
     expect(container.querySelector('td[data-label="Showtimes"]')).not.toBeNull();
     expect(container.querySelector('td[data-label="Links"]')).not.toBeNull();
+  });
+
+  it("filters rows by Contemporary Calgary", async () => {
+    mockFetch(payload);
+    render(<App />);
+
+    await screen.findByRole("heading", { name: "Calgary Showtimes" });
+
+    fireEvent.change(screen.getByLabelText("Theatre"), {
+      target: { value: "contemporary" }
+    });
+    fireEvent.change(screen.getByLabelText("Date"), {
+      target: { value: "2026-07-19" }
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Perspective Film Series: A Separation (2011)")
+      ).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Holy Days")).not.toBeInTheDocument();
   });
 });
 
