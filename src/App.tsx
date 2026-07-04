@@ -94,7 +94,8 @@ function App() {
       <section className="hero">
         <h1>Calgary Showtimes</h1>
         <p className="lede">
-          Live listings from The Plaza Theatre, Globe Cinema, and The GRAND
+          Live listings from The Plaza Theatre, Globe Cinema, The GRAND, and
+          Contemporary Calgary
         </p>
 
         {payload ? (
@@ -142,6 +143,7 @@ function App() {
                   <option value="plaza">The Plaza Theatre</option>
                   <option value="globe">Globe Cinema</option>
                   <option value="grand">The GRAND</option>
+                  <option value="contemporary">Contemporary Calgary</option>
                 </select>
               </label>
 
