@@ -464,15 +464,15 @@ function parseGrandDetail(
 }
 
 function isGrandMovieDetail(detailText: string): boolean {
-  const hasMovieStart = /\bMovie starts:/i.test(detailText);
-  const hasFeatureScreening = /\bFeature Film Screening:/i.test(detailText);
-  const hasFilmMetadata = /\b(Directed by|Rating:|Trailer:)/i.test(detailText);
+  const hasMovieStart = /Movie starts:/i.test(detailText);
+  const hasFeatureScreening = /Feature Film Screening:/i.test(detailText);
+  const hasFilmMetadata = /(Directed by|Rating:|Trailer:)/i.test(detailText);
 
   return hasMovieStart || (hasFeatureScreening && hasFilmMetadata);
 }
 
 function extractGrandMovieStart(detailText: string): string | null {
-  const match = detailText.match(/\bMovie starts:\s*([0-9]{1,2}:[0-9]{2}\s*[AP]M)/i);
+  const match = detailText.match(/Movie starts:\s*([0-9]{1,2}:[0-9]{2}\s*[AP]M)/i);
   return match ? normalizeGrandTime(match[1]) : null;
 }
 
@@ -498,13 +498,13 @@ function extractGrandPurchaseURL(
 }
 
 function extractGrandRating(detailText: string): string | null {
-  const match = detailText.match(/\bRating:\s*([A-Z0-9+-]+)/i);
+  const match = detailText.match(/Rating:\s*([A-Z0-9+-]+)/i);
   return match ? normalizeWhitespace(match[1].toUpperCase()) : null;
 }
 
 function extractGrandSummary(detailText: string): string | null {
-  const beforeEventDetails = detailText.split(/\bEvent details\b/i)[0] ?? detailText;
-  const afterRating = beforeEventDetails.split(/\bRating:\s*[A-Z0-9+-]+/i)[1];
+  const beforeEventDetails = detailText.split(/Event details/i)[0] ?? detailText;
+  const afterRating = beforeEventDetails.split(/Rating:\s*[A-Z0-9+-]+/i)[1];
 
   return nilIfBlank(afterRating ?? beforeEventDetails);
 }
