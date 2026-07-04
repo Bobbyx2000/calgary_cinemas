@@ -4,7 +4,7 @@ Public web MVP for the Mac app, designed for free GitHub Pages hosting.
 
 ## What it does
 
-- Scrapes The Plaza Theatre and Globe Cinema
+- Scrapes The Plaza Theatre, Globe Cinema, The GRAND, and Contemporary Calgary
 - Generates a static `public/listings.json`
 - Renders a filterable React table
 - Deploys automatically to GitHub Pages

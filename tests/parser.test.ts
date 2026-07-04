@@ -3,9 +3,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  CONTEMPORARY_CALGARY_SOURCE_URL,
   GLOBE_SOURCE_URL,
   GRAND_SOURCE_URL,
   PLAZA_SOURCE_URL,
+  parseContemporaryCalgaryHTML,
   parseGlobeDate,
   parseGlobeHTML,
   parseGrandDate,
@@ -33,6 +35,14 @@ const grandMovieHTML = readFileSync(
 );
 const grandEventHTML = readFileSync(
   path.join(fixtureDir, "grand-event.html"),
+  "utf8"
+);
+const contemporaryCalgaryHTML = readFileSync(
+  path.join(fixtureDir, "contemporary-calgary.html"),
+  "utf8"
+);
+const contemporaryCalgaryDetailHTML = readFileSync(
+  path.join(fixtureDir, "contemporary-calgary-detail.html"),
   "utf8"
 );
 
@@ -112,6 +122,42 @@ describe("listing parsers", () => {
     expect(listings[0]?.showtimes[0]?.startsAt).toBe("2026-07-11T02:00:00.000Z");
   });
 
+  it("parses upcoming Contemporary Calgary perspective screenings", async () => {
+    const summerReferenceDate = new Date("2026-07-03T12:00:00.000Z");
+    const fetchStub: typeof fetch = async (input) => {
+      const url = String(input);
+
+      if (url === "https://www.contemporarycalgary.com/whats-on/perspective-film-series-a-separation-2011") {
+        return new Response(contemporaryCalgaryDetailHTML, { status: 200 });
+      }
+
+      throw new Error(`Unexpected URL: ${url}`);
+    };
+
+    const listings = await parseContemporaryCalgaryHTML(
+      contemporaryCalgaryHTML,
+      fetchStub,
+      summerReferenceDate
+    );
+
+    expect(listings).toHaveLength(1);
+    expect(listings[0]?.title).toBe("Perspective Film Series: A Separation (2011)");
+    expect(listings[0]?.kind).toBe("movie");
+    expect(listings[0]?.theatre).toBe("contemporary");
+    expect(listings[0]?.rating).toBeNull();
+    expect(listings[0]?.summary).toContain("An intense legal drama");
+    expect(listings[0]?.posterURL).toBe(
+      "http://static1.squarespace.com/static/5b087e18aa49a12aeb01e8e4/5b0880a3f950b73c0d2c5781/6a0780901f29244993f0daec/1779732748800/PerspectiveFilmSeries_ASeperation_2026_v019.jpg?format=1500w"
+    );
+    expect(listings[0]?.purchaseURL).toBe(
+      "https://www.showpass.com/perspective-film-series-a-separation-2011/"
+    );
+    expect(listings[0]?.sourceURL).toBe(
+      "https://www.contemporarycalgary.com/whats-on/perspective-film-series-a-separation-2011"
+    );
+    expect(listings[0]?.showtimes[0]?.startsAt).toBe("2026-07-19T23:30:00.000Z");
+  });
+
   it("parses Plaza, Globe, and Grand dates in the Edmonton timezone", () => {
     expect(parsePlazaDate("Thursday 16, April", "2:00 PM", referenceDate)?.toISOString()).toBe(
       "2026-04-16T20:00:00.000Z"
@@ -137,6 +183,10 @@ describe("listing parsers", () => {
       }
 
       if (url === GRAND_SOURCE_URL) {
+        return new Response("<div></div>", { status: 200 });
+      }
+
+      if (url === CONTEMPORARY_CALGARY_SOURCE_URL) {
         return new Response("<div></div>", { status: 200 });
       }
 
