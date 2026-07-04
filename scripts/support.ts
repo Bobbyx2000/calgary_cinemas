@@ -14,6 +14,8 @@ export const PLAZA_SOURCE_URL =
   "https://ticketing.uswest.veezi.com/sessions/?siteToken=9xj6mkn8fmb6cv01mats3y1zgr";
 export const GLOBE_SOURCE_URL = "https://globecinema.ca/movie.html";
 export const GRAND_SOURCE_URL = "https://www.thegrandyyc.ca/whats-on";
+export const CONTEMPORARY_CALGARY_SOURCE_URL =
+  "https://www.contemporarycalgary.com/learn-more-perspective-film-series";
 
 type FetchLike = typeof fetch;
 
@@ -37,6 +39,12 @@ type GrandCandidate = {
   detailURL: string;
   posterURL: string | null;
   purchaseURL: string | null;
+};
+
+type ContemporaryCandidate = {
+  title: string;
+  detailURL: string;
+  posterURL: string | null;
 };
 
 type ProviderDefinition = {
@@ -64,6 +72,16 @@ const providers: ProviderDefinition[] = [
     fetchListings: async (fetchImpl, referenceDate) =>
       parseGrandHTML(
         await fetchHTML(GRAND_SOURCE_URL, fetchImpl),
+        fetchImpl,
+        referenceDate
+      )
+  },
+  {
+    sourceName: "Contemporary Calgary",
+    sourceURL: CONTEMPORARY_CALGARY_SOURCE_URL,
+    fetchListings: async (fetchImpl, referenceDate) =>
+      parseContemporaryCalgaryHTML(
+        await fetchHTML(CONTEMPORARY_CALGARY_SOURCE_URL, fetchImpl),
         fetchImpl,
         referenceDate
       )
@@ -294,6 +312,42 @@ export async function parseGrandHTML(
   return sortListings(listings.filter((listing): listing is Listing => listing !== null));
 }
 
+export async function parseContemporaryCalgaryHTML(
+  html: string,
+  fetchImpl: FetchLike,
+  referenceDate = new Date()
+): Promise<Listing[]> {
+  const $ = cheerio.load(html, { baseURI: CONTEMPORARY_CALGARY_SOURCE_URL });
+  const candidates = parseContemporaryCalgaryCandidates($, referenceDate);
+  const listings = await Promise.all(
+    candidates.map(async (candidate): Promise<Listing | null> => {
+      const detailHTML = await fetchHTML(candidate.detailURL, fetchImpl);
+      const detail = parseContemporaryCalgaryDetail(detailHTML);
+
+      if (!detail) {
+        return null;
+      }
+
+      const showtime = buildShowtime(detail.startsAt, detail.purchaseURL);
+
+      return {
+        id: normalizedListingID("contemporary", candidate.title),
+        title: candidate.title,
+        kind: "movie" as const,
+        theatre: "contemporary",
+        rating: null,
+        summary: detail.summary,
+        posterURL: detail.posterURL ?? candidate.posterURL,
+        purchaseURL: detail.purchaseURL,
+        sourceURL: candidate.detailURL,
+        showtimes: [showtime]
+      } satisfies Listing;
+    })
+  );
+
+  return sortListings(listings.filter((listing): listing is Listing => listing !== null));
+}
+
 export function parseGrandDate(
   dateText: string,
   timeText: string,
@@ -432,6 +486,63 @@ function parseGrandCandidates($: cheerio.CheerioAPI): GrandCandidate[] {
     });
 }
 
+function parseContemporaryCalgaryCandidates(
+  $: cheerio.CheerioAPI,
+  referenceDate: Date
+): ContemporaryCandidate[] {
+  const reference = DateTime.fromJSDate(referenceDate, { zone: SHOWTIME_TIME_ZONE }).startOf(
+    "day"
+  );
+
+  return $(".summary-item-record-type-event")
+    .toArray()
+    .flatMap((element) => {
+      const card = $(element);
+      const title = normalizeWhitespace(
+        card.find(".summary-title-link").first().text() ||
+          card.find(".summary-thumbnail-container").first().attr("data-title") ||
+          ""
+      );
+      const detailHref =
+        card.find(".summary-title-link[href]").first().attr("href") ??
+        card.find(".summary-thumbnail-container[href]").first().attr("href") ??
+        "";
+      const detailURL = resolveURL(detailHref, CONTEMPORARY_CALGARY_SOURCE_URL);
+      const dateText = normalizeWhitespace(
+        card.find("time.summary-metadata-item--date").first().text()
+      );
+      const startsOn = DateTime.fromFormat(dateText, "MMMM d, yyyy", {
+        zone: SHOWTIME_TIME_ZONE,
+        locale: "en-US"
+      });
+
+      if (
+        !title.includes("Perspective Film Series") ||
+        !detailURL ||
+        !isInternalURL(detailURL, CONTEMPORARY_CALGARY_SOURCE_URL) ||
+        !startsOn.isValid ||
+        startsOn.toMillis() < reference.toMillis() ||
+        startsOn.diff(reference, "days").days > 365
+      ) {
+        return [];
+      }
+
+      return [
+        {
+          title,
+          detailURL,
+          posterURL: resolveURL(
+            card.find("img.summary-thumbnail-image").first().attr("data-image") ??
+              card.find("img.summary-thumbnail-image").first().attr("data-src") ??
+              card.find("img.summary-thumbnail-image").first().attr("src") ??
+              "",
+            CONTEMPORARY_CALGARY_SOURCE_URL
+          )
+        }
+      ];
+    });
+}
+
 function parseGrandDetail(
   html: string,
   dateText: string,
@@ -519,6 +630,137 @@ function extractGrandSummary(detailText: string): string | null {
 
 function normalizeGrandTime(timeText: string): string {
   return normalizeWhitespace(timeText).replace(/\s*([AP])M$/i, " $1M").toUpperCase();
+}
+
+function parseContemporaryCalgaryDetail(html: string): {
+  startsAt: Date;
+  posterURL: string | null;
+  purchaseURL: string | null;
+  summary: string | null;
+} | null {
+  const $ = cheerio.load(html, { baseURI: CONTEMPORARY_CALGARY_SOURCE_URL });
+  const eventData = extractContemporaryCalgaryEventData($);
+
+  if (!eventData) {
+    return null;
+  }
+
+  return {
+    startsAt: eventData.startsAt,
+    posterURL: eventData.posterURL,
+    purchaseURL: extractContemporaryCalgaryPurchaseURL($),
+    summary: extractContemporaryCalgarySummary($)
+  };
+}
+
+function extractContemporaryCalgaryEventData($: cheerio.CheerioAPI): {
+  startsAt: Date;
+  posterURL: string | null;
+} | null {
+  const structuredData = $('script[type="application/ld+json"]')
+    .toArray()
+    .flatMap((element) => {
+      const rawValue = $(element).contents().text().trim();
+
+      if (!rawValue) {
+        return [];
+      }
+
+      try {
+        const parsed = JSON.parse(rawValue) as unknown;
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch {
+        return [];
+      }
+    });
+
+  for (const candidate of structuredData) {
+    if (!isStructuredEvent(candidate)) {
+      continue;
+    }
+
+    const startsAt = DateTime.fromISO(candidate.startDate, { setZone: true });
+
+    if (!startsAt.isValid) {
+      continue;
+    }
+
+    const posterValue = Array.isArray(candidate.image)
+      ? candidate.image[0]
+      : candidate.image;
+
+    return {
+      startsAt: startsAt.toJSDate(),
+      posterURL:
+        typeof posterValue === "string"
+          ? resolveURL(posterValue, CONTEMPORARY_CALGARY_SOURCE_URL)
+          : null
+    };
+  }
+
+  return null;
+}
+
+function extractContemporaryCalgaryPurchaseURL($: cheerio.CheerioAPI): string | null {
+  const ticketLinks = $("a[href]")
+    .toArray()
+    .filter((link) => normalizeWhitespace($(link).text()).toLowerCase() === "get tickets");
+
+  for (const link of ticketLinks) {
+    const resolvedHref = resolveURL($(link).attr("href") ?? "", CONTEMPORARY_CALGARY_SOURCE_URL);
+
+    if (resolvedHref && !isInternalURL(resolvedHref, CONTEMPORARY_CALGARY_SOURCE_URL)) {
+      return resolvedHref;
+    }
+  }
+
+  return null;
+}
+
+function extractContemporaryCalgarySummary($: cheerio.CheerioAPI): string | null {
+  const paragraphs = $(".eventitem-column-content .sqs-html-content p")
+    .toArray()
+    .map((element) => normalizeWhitespace($(element).text()))
+    .filter(Boolean);
+
+  const synopsis = paragraphs.find((paragraph) => {
+    const lowercased = paragraph.toLowerCase();
+
+    return (
+      paragraph.length >= 80 &&
+      !lowercased.startsWith("country:") &&
+      !lowercased.includes("minutes, in") &&
+      !lowercased.includes("free for members")
+    );
+  });
+
+  return synopsis ?? nilIfBlank(paragraphs[0] ?? "");
+}
+
+function isStructuredEvent(
+  value: unknown
+): value is { "@type": string | string[]; startDate: string; image?: string | string[] } {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as {
+    "@type"?: unknown;
+    startDate?: unknown;
+    image?: unknown;
+  };
+  const types = Array.isArray(candidate["@type"])
+    ? candidate["@type"]
+    : [candidate["@type"]];
+
+  return (
+    types.some((type) => type === "Event") &&
+    typeof candidate.startDate === "string" &&
+    (candidate.image === undefined ||
+      typeof candidate.image === "string" ||
+      (Array.isArray(candidate.image) &&
+        candidate.image.every((image) => typeof image === "string")))
+  );
 }
 
 function parseInferredDate(
