@@ -103,6 +103,9 @@ describe("listing parsers", () => {
     expect(listings[0]?.kind).toBe("movie");
     expect(listings[0]?.theatre).toBe("grand");
     expect(listings[0]?.rating).toBe("14A");
+    expect(listings[0]?.summary).toContain(
+      "Trying to leave their troubled lives behind"
+    );
     expect(listings[0]?.posterURL).toBe("https://example.com/sinners.png");
     expect(listings[0]?.purchaseURL).toBe("https://www.showpass.com/sinners-attg/");
     expect(listings[0]?.sourceURL).toBe("https://www.thegrandyyc.ca/sinners-attg");

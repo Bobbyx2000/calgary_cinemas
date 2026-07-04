@@ -498,15 +498,23 @@ function extractGrandPurchaseURL(
 }
 
 function extractGrandRating(detailText: string): string | null {
-  const match = detailText.match(/Rating:\s*([A-Z0-9+-]+)/i);
+  const match = detailText.match(
+    /Rating:\s*(PG-13|NC-17|UNRATED|STC|18A|14A|PG|NR|R|G)/i
+  );
   return match ? normalizeWhitespace(match[1].toUpperCase()) : null;
 }
 
 function extractGrandSummary(detailText: string): string | null {
   const beforeEventDetails = detailText.split(/Event details/i)[0] ?? detailText;
-  const afterRating = beforeEventDetails.split(/Rating:\s*[A-Z0-9+-]+/i)[1];
+  const ratingMatch = beforeEventDetails.match(
+    /Rating:\s*(PG-13|NC-17|UNRATED|STC|18A|14A|PG|NR|R|G)/i
+  );
+  const afterRating =
+    ratingMatch && ratingMatch.index !== undefined
+      ? beforeEventDetails.slice(ratingMatch.index + ratingMatch[0].length)
+      : beforeEventDetails;
 
-  return nilIfBlank(afterRating ?? beforeEventDetails);
+  return nilIfBlank(afterRating);
 }
 
 function normalizeGrandTime(timeText: string): string {
