@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../src/App";
 import type { ListingsPayload } from "../src/lib/types";
 
@@ -78,12 +78,19 @@ const payload: ListingsPayload = {
 };
 
 describe("App", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-04-16T18:00:00.000Z"));
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
     cleanup();
   });
 
-  it("selects the earliest available date by default", async () => {
+  it("selects today rather than the earliest available date by default", async () => {
+    vi.setSystemTime(new Date("2026-04-21T18:00:00.000Z"));
     mockFetch(payload);
     render(<App />);
 
@@ -92,11 +99,40 @@ describe("App", () => {
     const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
 
     await waitFor(() => {
-      expect(dateInput.value).toBe("2026-04-16");
+      expect(dateInput.value).toBe("2026-04-21");
     });
 
-    expect(screen.getByText("Thu, 2026-04-16")).toBeInTheDocument();
+    expect(screen.getByText("Tue, 2026-04-21")).toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(1);
+  });
+
+  it("uses the Edmonton date when UTC has reached the next day", async () => {
+    vi.setSystemTime(new Date("2026-09-07T01:00:00.000Z"));
+    mockFetch(payload);
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Date")).toHaveValue("2026-09-06");
+    });
+    expect(screen.getByText(/Nothing matches the current filters/i)).toBeInTheDocument();
+  });
+
+  it("preserves a manually selected date when the theatre changes", async () => {
+    mockFetch(payload);
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Date")).toHaveValue("2026-04-16");
+    });
+    fireEvent.change(screen.getByLabelText("Date"), {
+      target: { value: "2026-04-21" }
+    });
+    fireEvent.change(screen.getByLabelText("Theatre"), {
+      target: { value: "plaza" }
+    });
+
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-04-21");
+    expect(screen.getByText("Holy Days")).toBeInTheDocument();
   });
 
   it("renders updated hero copy, provider warnings, and listing links", async () => {
@@ -151,6 +187,9 @@ describe("App", () => {
     render(<App />);
 
     await screen.findByText(/No listings are available right now/i);
+    await waitFor(() => {
+      expect(screen.getByLabelText("Date")).toHaveValue("2026-04-16");
+    });
   });
 
   it("renders a no-match state when filters exclude all rows", async () => {

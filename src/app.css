@@ -98,12 +98,21 @@
 
 .filters input,
 .filters select {
+  display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface-strong);
   color: var(--text-strong);
+}
+
+.filters input[type="date"] {
+  /* Keep iOS date controls from adding native sizing outside the field. */
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .filters input[type="date"]::-webkit-calendar-picker-indicator {
@@ -274,7 +283,7 @@ tbody tr:last-child td {
   }
 
   .filters {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .table-wrap {

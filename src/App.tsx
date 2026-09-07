@@ -5,6 +5,7 @@ import {
   formatTimeLabel,
   formatTimestamp,
   getAvailableDates,
+  getDateKey,
   theatreLabel
 } from "./lib/listings";
 import type { ListingRow, ListingsPayload, Theatre } from "./lib/types";
@@ -69,9 +70,9 @@ function App() {
         return currentDate;
       }
 
-      return availableDates[0] ?? "";
+      return getDateKey(new Date().toISOString(), payload.timeZone);
     });
-  }, [availableDates, payload]);
+  }, [payload]);
 
   const rows = useMemo(() => {
     if (!payload) {
