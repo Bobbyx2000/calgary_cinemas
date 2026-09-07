@@ -102,7 +102,7 @@ describe("App", () => {
       expect(dateInput.value).toBe("2026-04-21");
     });
 
-    expect(screen.getByText("Tue, 2026-04-21")).toBeInTheDocument();
+    expect(screen.queryByText("Tue, 2026-04-21")).not.toBeInTheDocument();
     expect(screen.getAllByText("Holy Days")).toHaveLength(1);
   });
 

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   buildRows,
-  formatSelectedDateLabel,
   formatTimeLabel,
   formatTimestamp,
   getAvailableDates,
@@ -133,8 +132,8 @@ function App() {
 
             <div className="filters" aria-label="Showtime filters">
               <label>
-                <span>Theatre</span>
                 <select
+                  aria-label="Theatre"
                   value={selectedTheatre}
                   onChange={(event) =>
                     setSelectedTheatre(event.target.value as "all" | Theatre)
@@ -149,7 +148,6 @@ function App() {
               </label>
 
               <label>
-                <span>Date</span>
                 <input
                   aria-label="Date"
                   type="date"
@@ -157,11 +155,6 @@ function App() {
                   onChange={(event) => setSelectedDate(event.target.value)}
                   disabled={availableDates.length === 0}
                 />
-                <span className="filter-helper">
-                  {selectedDate
-                    ? formatSelectedDateLabel(selectedDate, payload.timeZone)
-                    : "No dates available"}
-                </span>
               </label>
             </div>
 
